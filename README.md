@@ -2,6 +2,97 @@
 
 Local pipeline UI that records or uploads audio, transcribes with **Groq Whisper**, classifies intent with **Groq LLM (e.g. Llama 3.3)**, runs tools via **LangGraph**, and shows transcription, intent, action, and output. All file writes stay under `output/`.
 
+## Architecture
+
+```mermaid
+flowchart LR
+
+  %% Subgraphs
+  subgraph voiceInput["Input"]
+    M["Microphone or file"]
+  end
+
+  subgraph sttBlock["Transcription"]
+    W["Groq Whisper"]
+  end
+
+  subgraph llmBlock["Understanding"]
+    I["Groq LLM intent classifier"]
+  end
+
+  subgraph orchBlock["Orchestration"]
+    LG["LangGraph"]
+  end
+
+  subgraph toolsBlock["Tools"]
+    T1["Create file"]
+    T2["Write code"]
+    T3["Summarize / Generate article"]
+    T4["General chat"]
+  end
+
+  subgraph uiBlock["Presentation"]
+    ST["Streamlit"]
+  end
+
+  %% Flow
+  M --> W
+  W --> I
+  I --> LG
+
+  LG --> T1
+  LG --> T2
+  LG --> T3
+  LG --> T4
+
+  T1 --> ST
+  T2 --> ST
+  T3 --> ST
+  T4 --> ST
+
+  W --> ST
+  I --> ST
+
+  %% Styles (Colors)
+  style M fill:#E3F2FD,stroke:#1E88E5,stroke-width:2px
+  style W fill:#E8F5E9,stroke:#43A047,stroke-width:2px
+  style I fill:#FFF3E0,stroke:#FB8C00,stroke-width:2px
+  style LG fill:#F3E5F5,stroke:#8E24AA,stroke-width:2px
+
+  style T1 fill:#E0F7FA,stroke:#00ACC1
+  style T2 fill:#E0F7FA,stroke:#00ACC1
+  style T3 fill:#E0F7FA,stroke:#00ACC1
+  style T4 fill:#E0F7FA,stroke:#00ACC1
+
+  style ST fill:#FCE4EC,stroke:#D81B60,stroke-width:2px
+
+  %% Subgraph Styling
+  style voiceInput fill:#E3F2FD,stroke:#1E88E5
+  style sttBlock fill:#E8F5E9,stroke:#43A047
+  style llmBlock fill:#FFF3E0,stroke:#FB8C00
+  style orchBlock fill:#F3E5F5,stroke:#8E24AA
+  style toolsBlock fill:#E0F7FA,stroke:#00ACC1
+  style uiBlock fill:#FCE4EC,stroke:#D81B60
+```
+
+Nothing here is magic: each rectangle is ordinary Python on the other side of an HTTP call. The point of drawing it is to show where **trust** enters the system—at the tool boundary, not inside the microphone.
+
+---
+
+## Workflow
+
+```mermaid
+flowchart TD
+  S0([Start]) --> T[transcribe]
+  T --> C[classify]
+  C --> R{route}
+  R -->|needs confirmation| H[hitl]
+  R -->|ready for tools| P[tools]
+  R -->|error or empty| Fin([Done])
+  H --> Fin
+  P --> Fin
+```
+
 ## Features
 
 - **Audio**: microphone (browser) or `.wav` / `.mp3` / `.m4a` / `.webm` / `.flac` upload
