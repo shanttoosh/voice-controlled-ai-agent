@@ -178,6 +178,3 @@ voice-ai-agent/
 - **Graceful degradation**: empty audio, STT failures, and parse errors surface as safe messages.
 - **Memory**: session history stored in Streamlit state and fed into intent classification.
 
-## License
-
-MIT (adjust as needed for your course submission).
